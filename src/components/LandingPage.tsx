@@ -1,12 +1,45 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Sparkles, FileText, Zap } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowRight, Sparkles, FileText, Zap, Languages, Moon, Sun } from "lucide-react";
+import { useState } from "react";
 
 interface LandingPageProps {
   onGetStarted: () => void;
 }
 
+const languages = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', flag: '🇫🇷' },
+  { code: 'de', name: 'German', flag: '🇩🇪' },
+  { code: 'it', name: 'Italian', flag: '🇮🇹' },
+  { code: 'pt', name: 'Portuguese', flag: '🇵🇹' },
+  { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+  { code: 'tr', name: 'Turkish', flag: '🇹🇷' },
+  { code: 'pl', name: 'Polish', flag: '🇵🇱' },
+  { code: 'nl', name: 'Dutch', flag: '🇳🇱' },
+  { code: 'sv', name: 'Swedish', flag: '🇸🇪' },
+  { code: 'no', name: 'Norwegian', flag: '🇳🇴' },
+  { code: 'da', name: 'Danish', flag: '🇩🇰' },
+  { code: 'fi', name: 'Finnish', flag: '🇫🇮' },
+  { code: 'el', name: 'Greek', flag: '🇬🇷' }
+];
+
 export function LandingPage({ onGetStarted }: LandingPageProps) {
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle('dark');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-hero">
       {/* Header */}
@@ -18,9 +51,33 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
             <span className="text-xl font-semibold">README AI</span>
           </div>
-          <Button variant="outline" onClick={onGetStarted}>
-            Sign In
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Language Toggle */}
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+              <SelectTrigger className="w-40">
+                <div className="flex items-center gap-2">
+                  <Languages className="w-4 h-4" />
+                  <span>{languages.find(l => l.code === selectedLanguage)?.flag}</span>
+                  <span className="hidden sm:inline">{languages.find(l => l.code === selectedLanguage)?.name}</span>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map(lang => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    <div className="flex items-center gap-2">
+                      <span>{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Dark Mode Toggle */}
+            <Button variant="outline" size="sm" onClick={toggleDarkMode}>
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+          </div>
         </div>
       </header>
 

@@ -16,30 +16,28 @@ import {
   Sparkles, 
   Eye, 
   Code,
-  Languages,
   Award,
   Camera,
   HelpCircle,
   Folder,
-  GitBranch,
   Cpu,
-  Database,
   Bug,
   Heart,
   Star,
   Calendar,
-  Coffee,
-  Rocket,
   Target,
   Wrench,
   CheckCircle,
-  AlertCircle,
   Users,
   Shield,
-  Globe,
+  Book,
   Terminal,
   Layers,
-  Book
+  X,
+  RotateCcw,
+  Moon,
+  Sun,
+  Trash2
 } from "lucide-react";
 
 interface ReadmeBuilderProps {
@@ -77,35 +75,34 @@ interface ProjectData {
   testing: string;
 }
 
-const languages = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-  { code: 'fr', name: 'French', flag: '🇫🇷' },
-  { code: 'de', name: 'German', flag: '🇩🇪' },
-  { code: 'it', name: 'Italian', flag: '🇮🇹' },
-  { code: 'pt', name: 'Portuguese', flag: '🇵🇹' },
-  { code: 'ru', name: 'Russian', flag: '🇷🇺' },
-  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
-  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
-  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
-  { code: 'tr', name: 'Turkish', flag: '🇹🇷' },
-  { code: 'pl', name: 'Polish', flag: '🇵🇱' },
-  { code: 'nl', name: 'Dutch', flag: '🇳🇱' },
-  { code: 'sv', name: 'Swedish', flag: '🇸🇪' },
-  { code: 'no', name: 'Norwegian', flag: '🇳🇴' },
-  { code: 'da', name: 'Danish', flag: '🇩🇰' },
-  { code: 'fi', name: 'Finnish', flag: '🇫🇮' },
-  { code: 'el', name: 'Greek', flag: '🇬🇷' }
-];
-
 export function ReadmeBuilder({ onBack }: ReadmeBuilderProps) {
   const [activeSection, setActiveSection] = useState("title");
   const [aiModel, setAiModel] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [customSectionName, setCustomSectionName] = useState("");
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [sections, setSections] = useState<Section[]>([
+    { id: "title", title: "Title & Description", icon: <FileText className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "badges", title: "🏷️ Badges", icon: <Award className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "features", title: "✨ Features", icon: <Sparkles className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "techStack", title: "🛠️ Tech Stack", icon: <Layers className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "installation", title: "📦 Installation", icon: <Download className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "usage", title: "🚀 Usage", icon: <Terminal className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "projectStructure", title: "📁 Project Structure", icon: <Folder className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "apiReference", title: "📚 API Reference", icon: <Book className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "deployment", title: "🚀 Deployment", icon: <Target className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "environmentVariables", title: "⚙️ Environment Variables", icon: <Cpu className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "screenshots", title: "📸 Screenshots", icon: <Camera className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "testing", title: "🧪 Testing", icon: <Bug className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "roadmap", title: "🗺️ Roadmap", icon: <Target className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "changelog", title: "📝 Changelog", icon: <Calendar className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "contributing", title: "🤝 Contributing", icon: <Users className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "license", title: "📄 License", icon: <Shield className="w-4 h-4" />, enabled: true, boilerplate: "" },
+    { id: "acknowledgments", title: "🙏 Acknowledgments", icon: <Heart className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "authorInfo", title: "👨‍💻 Author Info", icon: <Star className="w-4 h-4" />, enabled: false, boilerplate: "" },
+    { id: "faq", title: "❓ FAQ", icon: <HelpCircle className="w-4 h-4" />, enabled: false, boilerplate: "" },
+  ]);
   
   const [projectData, setProjectData] = useState<ProjectData>({
     title: "",
@@ -122,10 +119,12 @@ export function ReadmeBuilder({ onBack }: ReadmeBuilderProps) {
 **Server:** Node, Express
 
 **Database:** MongoDB`,
-    installation: `git clone https://github.com/yourusername/project-name.git
+    installation: `\`\`\`bash
+git clone https://github.com/yourusername/project-name.git
 cd project-name
 npm install
-npm run dev`,
+npm run dev
+\`\`\``,
     usage: `\`\`\`javascript
 import { ProjectName } from 'project-name'
 
@@ -139,17 +138,17 @@ function App() {
 \`\`\``,
     projectStructure: `\`\`\`
 project-name/
-├── README.md
-├── package.json
-├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── utils/
-│   └── App.js
-├── public/
-│   └── index.html
-└── docs/
-    └── API.md
+├── 📄 README.md
+├── 📦 package.json
+├── 📂 src/
+│   ├── 🧩 components/
+│   ├── 📄 pages/
+│   ├── 🛠️ utils/
+│   └── 📄 App.js
+├── 📂 public/
+│   └── 📄 index.html
+└── 📂 docs/
+    └── 📚 API.md
 \`\`\``,
     apiReference: `#### Get all items
 
@@ -170,22 +169,22 @@ project-name/
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
 | \`id\`      | \`string\` | **Required**. Id of item to fetch |`,
-    deployment: `To deploy this project run
+    deployment: `🚀 To deploy this project run
 
 \`\`\`bash
-  npm run build
+npm run build
 \`\`\``,
     license: "MIT",
-    contributing: `Contributions are always welcome!
+    contributing: `🤝 Contributions are always welcome!
 
 See \`contributing.md\` for ways to get started.
 
 Please adhere to this project's \`code of conduct\`.`,
-    acknowledgments: ` - [Awesome Readme Templates](https://awesomeopensource.com/project/elangosundar/awesome-README-templates)
- - [Awesome README](https://github.com/matiassingers/awesome-readme)
- - [How to write a Good readme](https://bulldogjob.com/news/449-how-to-write-a-good-readme-for-your-github-project)`,
+    acknowledgments: ` - 🌟 [Awesome Readme Templates](https://awesomeopensource.com/project/elangosundar/awesome-README-templates)
+ - 📚 [Awesome README](https://github.com/matiassingers/awesome-readme)
+ - 📖 [How to write a Good readme](https://bulldogjob.com/news/449-how-to-write-a-good-readme-for-your-github-project)`,
     screenshots: `![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)`,
-    environmentVariables: `To run this project, you will need to add the following environment variables to your .env file
+    environmentVariables: `⚙️ To run this project, you will need to add the following environment variables to your .env file
 
 \`API_KEY\`
 
@@ -197,58 +196,88 @@ I'm a full stack developer...
 [![portfolio](https://img.shields.io/badge/my_portfolio-000?style=for-the-badge&logo=ko-fi&logoColor=white)](https://katherinempeterson.com/)
 [![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/username)
 [![twitter](https://img.shields.io/badge/twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/username)`,
-    faq: `#### Question 1
+    faq: `#### ❓ Question 1
 
 Answer 1
 
-#### Question 2
+#### ❓ Question 2
 
 Answer 2`,
-    roadmap: `- [x] Add Changelog
-- [x] Add back to top links
-- [ ] Add Additional Templates w/ Examples
-- [ ] Add "components" document to easily copy & paste sections of the readme
-- [ ] Multi-language Support
-    - [ ] Chinese
-    - [ ] Spanish`,
+    roadmap: `- [x] ✅ Add Changelog
+- [x] ✅ Add back to top links
+- [ ] 🔄 Add Additional Templates w/ Examples
+- [ ] 🔄 Add "components" document to easily copy & paste sections of the readme
+- [ ] 🌍 Multi-language Support
+    - [ ] 🇨🇳 Chinese
+    - [ ] 🇪🇸 Spanish`,
     changelog: `## [1.0.0] - 2023-01-01
-### Added
+### ✅ Added
 - Initial release
 
 ## [0.1.0] - 2022-12-01
-### Added
+### ✅ Added
 - Project setup`,
-    testing: `To run tests, run the following command
+    testing: `🧪 To run tests, run the following command
 
 \`\`\`bash
-  npm run test
+npm run test
 \`\`\``
   });
 
-  const sections: Section[] = [
-    { id: "title", title: "Title & Description", icon: <FileText className="w-4 h-4" />, enabled: true, boilerplate: "" },
-    { id: "badges", title: "Badges", icon: <Award className="w-4 h-4" />, enabled: true, boilerplate: projectData.badges },
-    { id: "features", title: "Features", icon: <Sparkles className="w-4 h-4" />, enabled: true, boilerplate: projectData.features },
-    { id: "techStack", title: "Tech Stack", icon: <Layers className="w-4 h-4" />, enabled: true, boilerplate: projectData.techStack },
-    { id: "installation", title: "Installation", icon: <Download className="w-4 h-4" />, enabled: true, boilerplate: projectData.installation },
-    { id: "usage", title: "Usage", icon: <Terminal className="w-4 h-4" />, enabled: true, boilerplate: projectData.usage },
-    { id: "projectStructure", title: "Project Structure", icon: <Folder className="w-4 h-4" />, enabled: true, boilerplate: projectData.projectStructure },
-    { id: "apiReference", title: "API Reference", icon: <Book className="w-4 h-4" />, enabled: false, boilerplate: projectData.apiReference },
-    { id: "deployment", title: "Deployment", icon: <Rocket className="w-4 h-4" />, enabled: false, boilerplate: projectData.deployment },
-    { id: "environmentVariables", title: "Environment Variables", icon: <Cpu className="w-4 h-4" />, enabled: false, boilerplate: projectData.environmentVariables },
-    { id: "screenshots", title: "Screenshots", icon: <Camera className="w-4 h-4" />, enabled: false, boilerplate: projectData.screenshots },
-    { id: "testing", title: "Testing", icon: <Bug className="w-4 h-4" />, enabled: false, boilerplate: projectData.testing },
-    { id: "roadmap", title: "Roadmap", icon: <Target className="w-4 h-4" />, enabled: false, boilerplate: projectData.roadmap },
-    { id: "changelog", title: "Changelog", icon: <Calendar className="w-4 h-4" />, enabled: false, boilerplate: projectData.changelog },
-    { id: "contributing", title: "Contributing", icon: <Users className="w-4 h-4" />, enabled: true, boilerplate: projectData.contributing },
-    { id: "license", title: "License", icon: <Shield className="w-4 h-4" />, enabled: true, boilerplate: projectData.license },
-    { id: "acknowledgments", title: "Acknowledgments", icon: <Heart className="w-4 h-4" />, enabled: false, boilerplate: projectData.acknowledgments },
-    { id: "authorInfo", title: "Author Info", icon: <Star className="w-4 h-4" />, enabled: false, boilerplate: projectData.authorInfo },
-    { id: "faq", title: "FAQ", icon: <HelpCircle className="w-4 h-4" />, enabled: false, boilerplate: projectData.faq },
-  ];
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle('dark');
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setSections(prevSections => 
+      prevSections.map(section => 
+        section.id === sectionId 
+          ? { ...section, enabled: !section.enabled }
+          : section
+      )
+    );
+  };
+
+  const removeSection = (sectionId: string) => {
+    setSections(prevSections => 
+      prevSections.map(section => 
+        section.id === sectionId 
+          ? { ...section, enabled: false }
+          : section
+      )
+    );
+  };
+
+  const resetSection = (sectionId: string) => {
+    const section = sections.find(s => s.id === sectionId);
+    if (section) {
+      updateProjectData(sectionId as keyof ProjectData, section.boilerplate);
+    }
+  };
+
+  const addCustomSection = () => {
+    if (!customSectionName) return;
+    
+    const customId = customSectionName.toLowerCase().replace(/\s+/g, '');
+    const newSection: Section = {
+      id: customId,
+      title: `🎯 ${customSectionName}`,
+      icon: <FileText className="w-4 h-4" />,
+      enabled: true,
+      boilerplate: `## ${customSectionName}\n\nAdd your custom content here...`
+    };
+    
+    setSections(prev => [...prev, newSection]);
+    setProjectData(prev => ({
+      ...prev,
+      [customId]: newSection.boilerplate
+    }));
+    setCustomSectionName("");
+  };
 
   const generateMarkdown = () => {
-    let markdown = `# ${projectData.title || "Project Title"}\n\n`;
+    let markdown = `# ${projectData.title || "🚀 Project Title"}\n\n`;
     
     if (projectData.description) {
       markdown += `${projectData.description}\n\n`;
@@ -260,11 +289,11 @@ Answer 2`,
       const content = projectData[section.id as keyof ProjectData] as string;
       if (content && section.id !== "title") {
         let sectionTitle = section.title;
-        if (section.id === "techStack") sectionTitle = "Tech Stack";
-        if (section.id === "projectStructure") sectionTitle = "Project Structure";
-        if (section.id === "apiReference") sectionTitle = "API Reference";
-        if (section.id === "environmentVariables") sectionTitle = "Environment Variables";
-        if (section.id === "authorInfo") sectionTitle = "Authors";
+        if (section.id === "techStack") sectionTitle = "🛠️ Tech Stack";
+        if (section.id === "projectStructure") sectionTitle = "📁 Project Structure";
+        if (section.id === "apiReference") sectionTitle = "📚 API Reference";
+        if (section.id === "environmentVariables") sectionTitle = "⚙️ Environment Variables";
+        if (section.id === "authorInfo") sectionTitle = "👨‍💻 Authors";
         
         markdown += `## ${sectionTitle}\n\n${content}\n\n`;
       }
@@ -324,7 +353,7 @@ Answer 2`,
     // OpenAI API integration would go here
     // This is a placeholder that returns enhanced content
     return {
-      description: `${projectData.description}\n\nThis project provides a seamless experience for users looking to ${projectData.title.toLowerCase()}. Built with modern technologies and best practices in mind.`,
+      description: `${projectData.description}\n\n🎯 This project provides a seamless experience for users looking to ${projectData.title.toLowerCase()}. Built with modern technologies and best practices in mind.`,
       features: `- 🚀 **Lightning Fast**: Optimized for performance and speed
 - 💡 **Smart AI Integration**: Powered by advanced machine learning
 - 🔒 **Secure**: Enterprise-grade security measures
@@ -337,14 +366,14 @@ Answer 2`,
 **AI/ML:** OpenAI API, TensorFlow
 **DevOps:** Docker, AWS, CI/CD
 **Testing:** Jest, Cypress`,
-      installation: `# Installation Guide
+      installation: `## 📦 Installation Guide
 
-## Prerequisites
+### Prerequisites
 - Node.js (v16 or higher)
 - npm or yarn
 - Git
 
-## Quick Start
+### Quick Start
 \`\`\`bash
 git clone https://github.com/yourusername/${projectData.title.toLowerCase().replace(/\s+/g, '-')}.git
 cd ${projectData.title.toLowerCase().replace(/\s+/g, '-')}
@@ -352,12 +381,12 @@ npm install
 npm run dev
 \`\`\`
 
-## Environment Setup
+### Environment Setup
 Copy the environment file and configure your variables:
 \`\`\`bash
 cp .env.example .env
 \`\`\``,
-      usage: `## Getting Started
+      usage: `## 🚀 Getting Started
 
 ### Basic Usage
 \`\`\`javascript
@@ -397,11 +426,6 @@ app.configure(config);
   const callClaude = async (prompt: string, apiKey: string) => {
     // Anthropic Claude API integration would go here
     return callOpenAI(prompt, apiKey, 'claude'); // Placeholder
-  };
-
-  const toggleSection = (sectionId: string) => {
-    // Toggle section enabled/disabled state
-    // This would need to be implemented with state management
   };
 
   const updateProjectData = (field: keyof ProjectData, value: string) => {
@@ -445,52 +469,39 @@ app.configure(config);
             </label>
             <Textarea 
               placeholder={sections.find(s => s.id === activeSection)?.boilerplate || "Enter content..."}
-              rows={12}
+              rows={15}
               value={activeData || sections.find(s => s.id === activeSection)?.boilerplate || ""}
               onChange={(e) => updateProjectData(activeSection as keyof ProjectData, e.target.value)}
+              className="min-h-[400px]"
             />
           </div>
         );
     }
   };
 
+  const enabledSections = sections.filter(s => s.enabled);
+  const availableSections = sections.filter(s => !s.enabled);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex">
       {/* Sidebar */}
-      <div className="w-80 bg-card/80 backdrop-blur-sm border-r border-border/50 flex flex-col shadow-xl">
+      <div className="w-80 bg-card/80 backdrop-blur-sm border-r border-border/50 flex flex-col shadow-xl overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-border/50">
-          <Button variant="ghost" onClick={onBack} className="mb-4 p-0 h-auto font-normal text-muted-foreground hover:text-foreground">
-            ← Back to Home
-          </Button>
+          <div className="flex items-center justify-between mb-4">
+            <Button variant="ghost" onClick={onBack} className="p-0 h-auto font-normal text-muted-foreground hover:text-foreground">
+              ← Back to Home
+            </Button>
+            <Button variant="outline" size="sm" onClick={toggleDarkMode}>
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+          </div>
+          
           <div className="flex items-center gap-3 mb-6">
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg">
               <FileText className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="font-bold text-lg">README Builder</span>
-          </div>
-          
-          {/* Language Toggle */}
-          <div className="mb-4">
-            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-              <SelectTrigger className="w-full">
-                <div className="flex items-center gap-2">
-                  <Languages className="w-4 h-4" />
-                  <span>{languages.find(l => l.code === selectedLanguage)?.flag}</span>
-                  <span>{languages.find(l => l.code === selectedLanguage)?.name}</span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {languages.map(lang => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    <div className="flex items-center gap-2">
-                      <span>{lang.flag}</span>
-                      <span>{lang.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           
           {/* AI Controls */}
@@ -535,39 +546,94 @@ app.configure(config);
           </div>
         </div>
 
-        {/* Sections */}
-        <div className="flex-1 p-4 overflow-y-auto">
-          <div className="text-sm font-medium text-muted-foreground mb-3">Sections</div>
-          <div className="space-y-1">
-            {sections.map((section) => (
+        {/* Enabled Sections */}
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-muted-foreground">Sections</span>
+            <Button variant="ghost" size="sm" onClick={() => setSections(prev => prev.map(s => ({ ...s, enabled: false })))}>
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </Button>
+          </div>
+          
+          {/* Selected Sections (Top Section like in image) */}
+          <div className="space-y-2 mb-4">
+            {enabledSections.map((section) => (
+              <div
+                key={section.id}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border-2 transition-all duration-200 ${
+                  activeSection === section.id 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border/30 hover:border-border/60'
+                }`}
+              >
+                <button
+                  onClick={() => setActiveSection(section.id)}
+                  className="flex items-center gap-3 flex-1 text-left"
+                >
+                  {section.icon}
+                  <span className="text-sm font-medium">{section.title}</span>
+                </button>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-7 h-7 p-0"
+                    onClick={() => resetSection(section.id)}
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-7 h-7 p-0 text-destructive"
+                    onClick={() => removeSection(section.id)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-sm font-medium text-muted-foreground mb-3">Click on a section below to add it to your readme</div>
+          
+          {/* Available Sections */}
+          <div className="space-y-1 mb-4">
+            {availableSections.map((section) => (
               <button
                 key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
-                  activeSection === section.id 
-                    ? 'bg-primary text-primary-foreground shadow-lg' 
-                    : 'hover:bg-secondary/80'
-                }`}
+                onClick={() => toggleSection(section.id)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200 hover:bg-secondary/80 border border-border/30"
               >
                 {section.icon}
                 <span className="text-sm font-medium">{section.title}</span>
-                {section.enabled && (
-                  <Badge variant="secondary" className="ml-auto">
-                    <CheckCircle className="w-3 h-3 text-green-500" />
-                  </Badge>
-                )}
+                <Plus className="w-4 h-4 ml-auto text-muted-foreground" />
               </button>
             ))}
           </div>
           
-          <Button variant="ghost" className="w-full mt-4 justify-start hover:bg-secondary/50">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Custom Section
-          </Button>
+          {/* Custom Section */}
+          <div className="space-y-2">
+            <Input 
+              placeholder="Custom section name"
+              value={customSectionName}
+              onChange={(e) => setCustomSectionName(e.target.value)}
+            />
+            <Button 
+              variant="outline" 
+              className="w-full justify-start hover:bg-secondary/50"
+              onClick={addCustomSection}
+              disabled={!customSectionName}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Custom Section
+            </Button>
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="p-4 border-t border-border/50 space-y-2">
+        <div className="p-4 border-t border-border/50 space-y-2 mt-auto">
           <Button 
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
             onClick={handleAIGeneration}
@@ -586,14 +652,14 @@ app.configure(config);
       {/* Main Content - Side by Side */}
       <div className="flex-1 flex">
         {/* Editor */}
-        <div className="flex-1 p-6 border-r border-border/50">
+        <div className="flex-1 p-6 border-r border-border/50 overflow-y-auto">
           <div className="h-full">
             <div className="flex items-center gap-2 mb-6">
               <Code className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-bold">Editor</h2>
             </div>
             
-            <Card className="p-6 h-full shadow-lg border-border/50">
+            <Card className="p-6 shadow-lg border-border/50">
               <h3 className="text-lg font-semibold mb-4">
                 {sections.find(s => s.id === activeSection)?.title}
               </h3>
@@ -603,14 +669,14 @@ app.configure(config);
         </div>
 
         {/* Live Preview */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 overflow-y-auto">
           <div className="h-full">
             <div className="flex items-center gap-2 mb-6">
               <Eye className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-bold">Live Preview</h2>
             </div>
             
-            <Card className="p-6 h-full shadow-lg border-border/50">
+            <Card className="p-6 shadow-lg border-border/50 h-full">
               <div className="bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-lg p-6 h-full overflow-auto">
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown
@@ -633,13 +699,13 @@ app.configure(config);
                         );
                       },
                       h1: ({ children }) => (
-                        <h1 className="text-3xl font-bold mb-4 text-primary">{children}</h1>
+                        <h1 className="text-3xl font-bold mb-4 text-foreground border-b-2 border-border pb-2">{children}</h1>
                       ),
                       h2: ({ children }) => (
-                        <h2 className="text-2xl font-semibold mb-3 text-primary border-b border-border/50 pb-2">{children}</h2>
+                        <h2 className="text-2xl font-semibold mb-3 text-foreground border-b border-border/70 pb-2">{children}</h2>
                       ),
                       h3: ({ children }) => (
-                        <h3 className="text-xl font-semibold mb-2 text-primary">{children}</h3>
+                        <h3 className="text-xl font-semibold mb-2 text-foreground">{children}</h3>
                       ),
                       img: ({ src, alt }) => (
                         <img 
@@ -696,7 +762,7 @@ app.configure(config);
                         </a>
                       ),
                       strong: ({ children }) => (
-                        <strong className="font-bold text-primary">{children}</strong>
+                        <strong className="font-bold text-foreground">{children}</strong>
                       ),
                       em: ({ children }) => (
                         <em className="italic text-muted-foreground">{children}</em>
