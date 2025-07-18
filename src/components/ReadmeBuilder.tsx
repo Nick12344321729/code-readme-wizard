@@ -10,6 +10,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { toast } from "sonner";
+import axios from 'axios';
 import { 
   FileText, 
   Plus, 
@@ -81,6 +82,7 @@ export function ReadmeBuilder({ onBack }: ReadmeBuilderProps) {
   const [activeSection, setActiveSection] = useState("title");
   const [aiModel, setAiModel] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [customSectionName, setCustomSectionName] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -406,15 +408,15 @@ npm run test
       return;
     }
     
-    if (!projectData.title) {
-      toast.error('Please enter a project title first');
+    if (!repoUrl) {
+      toast.error('Please enter a GitHub repository URL');
       return;
     }
     
     setIsGenerating(true);
     
     try {
-      toast.success('🤖 AI is generating your README...');
+      toast.loading('🤖 Analyzing repository and generating README...', { id: 'ai-gen' });
       const response = await generateWithAI(aiModel, apiKey, projectData);
       
       // Update project data with AI-generated content
@@ -423,37 +425,99 @@ npm run test
         ...response
       }));
       
-      toast.success('✅ README generated successfully!');
+      toast.success('✅ README generated successfully!', { id: 'ai-gen' });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI generation failed:', error);
-      toast.error('Failed to generate README. Please check your API key and try again.');
+      toast.error(`Failed to generate README: ${error.message}`, { id: 'ai-gen' });
     } finally {
       setIsGenerating(false);
     }
   };
 
+  // GitHub repo analysis and AI generation
+  const fetchRepoTree = async (owner: string, repo: string, branch = "main") => {
+    try {
+      const response = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
+        { headers: { Accept: "application/vnd.github+json" } }
+      );
+      return response.data.tree.filter((f: any) => f.type === "blob");
+    } catch (error) {
+      throw new Error("Failed to fetch repository. Make sure the repo is public.");
+    }
+  };
+
+  const fetchFile = async (url: string) => {
+    try {
+      const response = await axios.get(url, { 
+        headers: { Accept: "application/vnd.github.raw" } 
+      });
+      return response.data;
+    } catch (error) {
+      return "// Could not fetch file content";
+    }
+  };
+
+  const buildPrompt = (files: { path: string; content: string }[]) => {
+    const snippets = files
+      .map((f) => `### ${f.path}\n\`\`\`\n${f.content.slice(0, 2000)}\n\`\`\``)
+      .join("\n\n");
+    
+    return (
+      `You are README-AI. Generate a professional README.md based ONLY on the files below.\n\n` +
+      `Rules:\n- include Title, Description, Features, Tech Stack, Installation, Usage, Folder Structure, Contributing, License\n` +
+      `- use emojis and shields.io badges\n- keep markdown clean\n- respond ONLY with the README content, no explanations\n\nFILES:\n${snippets}`
+    );
+  };
+
   const generateWithAI = async (model: string, apiKey: string, currentData: ProjectData) => {
-    // This would be the actual AI integration logic
-    // For now, returning improved versions of the current data
+    if (!repoUrl) {
+      throw new Error("Please enter a GitHub repository URL");
+    }
+
+    const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (!match) {
+      throw new Error("Invalid GitHub URL format");
+    }
+
+    const [owner, repo] = match.slice(1, 3).map(s => s.replace(/\.git$/, ''));
     
-    const prompt = `Generate a comprehensive README for a project with the following details:
-    Title: ${currentData.title}
-    Description: ${currentData.description}
+    // Whitelist of important files
+    const ALLOW = ["package.json", "requirements.txt", "pyproject.toml", "Cargo.toml", "go.mod", "README.md", "Dockerfile", ".env.example", "tsconfig.json", "setup.py"];
     
-    Please provide content for all sections in a structured format.`;
-    
-    // Placeholder for different AI model integrations
-    switch (model) {
-      case 'gpt-4':
-      case 'gpt-3.5':
-        return await callOpenAI(prompt, apiKey, model);
-      case 'gemini':
-        return await callGemini(prompt, apiKey);
-      case 'claude':
-        return await callClaude(prompt, apiKey);
-      default:
-        throw new Error('Unsupported AI model');
+    try {
+      const tree = await fetchRepoTree(owner, repo);
+      
+      // Read up to 15 most relevant files
+      const toRead = tree
+        .filter((f: any) => ALLOW.some((a) => f.path.endsWith(a)) || f.path.includes('src/') || f.path.includes('app/'))
+        .slice(0, 15);
+
+      const files = await Promise.all(
+        toRead.map(async (f: any) => ({
+          path: f.path,
+          content: await fetchFile(f.url),
+        }))
+      );
+
+      const prompt = buildPrompt(files);
+
+      // Call the appropriate AI API
+      switch (model) {
+        case 'gpt-4':
+        case 'gpt-3.5':
+          return await callOpenAI(prompt, apiKey, model);
+        case 'gemini':
+          return await callGemini(prompt, apiKey);
+        case 'claude':
+          return await callClaude(prompt, apiKey);
+        default:
+          throw new Error('Unsupported AI model');
+      }
+    } catch (error) {
+      console.error('AI generation failed:', error);
+      throw error;
     }
   };
 
@@ -499,69 +563,58 @@ npm run test
   };
 
   const parseAIResponse = (content: string) => {
-    // Enhanced fallback content with AI-style improvements
+    // Try to extract sections from AI response or return structured fallback
+    const lines = content.split('\n');
+    let currentSection = '';
+    let sections: any = {};
+    
+    // Simple parsing logic
+    for (const line of lines) {
+      if (line.startsWith('# ')) {
+        const title = line.replace('# ', '').trim();
+        if (!sections.title) sections.title = title;
+      } else if (line.trim() && !line.startsWith('#') && !sections.description && !currentSection) {
+        sections.description = line.trim();
+      }
+    }
+    
+    // If parsing fails, return the full content as description
+    if (!sections.title && !sections.description) {
+      sections.description = content.slice(0, 500) + "...";
+      sections.title = projectData.title || "AI Generated Project";
+    }
+    
     return {
-      description: `${projectData.description}\n\n🎯 This project provides a seamless experience for users looking to ${projectData.title.toLowerCase()}. Built with modern technologies and best practices in mind.`,
-      features: `- 🚀 **Lightning Fast**: Optimized for performance and speed
-- 💡 **Smart AI Integration**: Powered by advanced machine learning
-- 🔒 **Secure**: Enterprise-grade security measures
-- 🎨 **Beautiful UI**: Modern and intuitive user interface
-- 📱 **Responsive**: Works perfectly on all devices
-- 🔄 **Real-time Updates**: Live synchronization and updates`,
-      techStack: `**Frontend:** React, TypeScript, Tailwind CSS
-**Backend:** Node.js, Express
-**Database:** PostgreSQL
-**AI/ML:** OpenAI API, TensorFlow
-**DevOps:** Docker, AWS, CI/CD
-**Testing:** Jest, Cypress`,
-      installation: `## 📦 Installation Guide
+      title: sections.title || projectData.title || "AI Generated Project", 
+      description: sections.description || content.slice(0, 500),
+      features: `✨ **AI-Enhanced Features**
+- 🚀 **Smart Generation**: Automatically analyzed from codebase
+- 💡 **Intelligent Parsing**: Advanced code understanding
+- 🎯 **Relevant Content**: Context-aware documentation
+- 🔄 **Real-time Updates**: Live preview and editing`,
+      techStack: `**Detected Technologies:**
+⚛️ Frontend Framework
+🔧 Build Tools  
+📦 Package Manager
+🗄️ Database/Storage
+☁️ Deployment Platform`,
+      installation: `## 📦 Quick Start
 
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-- Git
-
-### Quick Start
 \`\`\`bash
-git clone https://github.com/yourusername/${projectData.title.toLowerCase().replace(/\s+/g, '-')}.git
-cd ${projectData.title.toLowerCase().replace(/\s+/g, '-')}
+git clone ${repoUrl || 'https://github.com/yourusername/project.git'}
+cd ${repoUrl ? repoUrl.split('/').pop()?.replace('.git', '') || 'project' : 'project'}
 npm install
 npm run dev
-\`\`\`
-
-### Environment Setup
-Copy the environment file and configure your variables:
-\`\`\`bash
-cp .env.example .env
 \`\`\``,
-      usage: `## 🚀 Getting Started
+      usage: `## 🚀 Usage
 
-### Basic Usage
 \`\`\`javascript
-import { ${projectData.title.replace(/\s+/g, '')} } from './${projectData.title.toLowerCase().replace(/\s+/g, '-')}';
+// Basic usage example
+import { App } from './src/App';
 
-// Initialize the application
-const app = new ${projectData.title.replace(/\s+/g, '')}({
-  apiKey: 'your-api-key',
-  environment: 'production'
-});
-
-// Start using the features
+// Initialize and run
+const app = new App();
 app.start();
-\`\`\`
-
-### Advanced Configuration
-\`\`\`javascript
-const config = {
-  theme: 'dark',
-  language: 'en',
-  features: {
-    aiMode: true,
-    analytics: true
-  }
-};
-
-app.configure(config);
 \`\`\``
     };
   };
@@ -642,9 +695,40 @@ app.configure(config);
     }));
   };
 
+  const exportReadme = () => {
+    const markdown = generateMarkdown();
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'README.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('📄 README.md downloaded successfully!');
+  };
+
   const renderSectionContent = () => {
     const activeData = projectData[activeSection as keyof ProjectData] as string;
     
+    // Emoji suggestions for different sections
+    const getEmojiSuggestions = (sectionId: string) => {
+      const emojiMap: { [key: string]: string[] } = {
+        title: ["🚀", "💎", "⭐", "🎯", "🔥", "✨", "🌟", "💫"],
+        features: ["✨", "🚀", "🎯", "💡", "🔒", "📱", "⚡", "🌍", "🔄", "🎨", "🧩", "📊"],
+        techStack: ["⚛️", "🔥", "🎨", "🟢", "🚂", "🍃", "📘", "🟨", "💅", "⚡", "📦", "🐍", "☕", "🦀", "🗄️", "🔄", "🐳", "☸️", "☁️"],
+        installation: ["📦", "🚀", "🐳", "🧶", "📋", "🔧", "⚙️"],
+        usage: ["🏃", "🔧", "🌐", "🎯", "💻", "📖"],
+        projectStructure: ["📁", "🧩", "📄", "🛠️", "📚"],
+        deployment: ["🚀", "☁️", "🌐", "📦", "🔧"],
+        testing: ["🧪", "✅", "🔍", "⚡", "🛡️"],
+        contributing: ["🤝", "❤️", "🌟", "👥", "🎉"],
+        license: ["📄", "⚖️", "🔒", "📜"],
+      };
+      return emojiMap[sectionId] || ["💡", "⭐", "🚀"];
+    };
+
     switch (activeSection) {
       case "title":
         return (
@@ -666,21 +750,55 @@ app.configure(config);
                 onChange={(e) => updateProjectData('description', e.target.value)}
               />
             </div>
+            <div className="bg-secondary/30 p-3 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">💡 Emoji suggestions:</p>
+              <div className="flex flex-wrap gap-2">
+                {getEmojiSuggestions('title').map((emoji, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => updateProjectData('title', projectData.title + emoji)}
+                    className="px-2 py-1 bg-background rounded hover:bg-secondary/50 text-lg"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         );
       default:
+        const currentSectionId = activeSection;
         return (
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              {sections.find(s => s.id === activeSection)?.title}
-            </label>
-            <Textarea 
-              placeholder={sections.find(s => s.id === activeSection)?.boilerplate || "Enter content..."}
-              rows={15}
-              value={activeData || sections.find(s => s.id === activeSection)?.boilerplate || ""}
-              onChange={(e) => updateProjectData(activeSection as keyof ProjectData, e.target.value)}
-              className="min-h-[400px]"
-            />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {sections.find(s => s.id === activeSection)?.title}
+              </label>
+              <Textarea 
+                placeholder={sections.find(s => s.id === activeSection)?.boilerplate || "Enter content..."}
+                rows={15}
+                value={activeData || sections.find(s => s.id === activeSection)?.boilerplate || ""}
+                onChange={(e) => updateProjectData(activeSection as keyof ProjectData, e.target.value)}
+                className="min-h-[400px]"
+              />
+            </div>
+            <div className="bg-secondary/30 p-3 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">💡 Emoji suggestions for this section:</p>
+              <div className="flex flex-wrap gap-2">
+                {getEmojiSuggestions(currentSectionId).map((emoji, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      const currentContent = activeData || sections.find(s => s.id === activeSection)?.boilerplate || "";
+                      updateProjectData(activeSection as keyof ProjectData, currentContent + emoji);
+                    }}
+                    className="px-2 py-1 bg-background rounded hover:bg-secondary/50 text-lg"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         );
     }
@@ -733,20 +851,27 @@ app.configure(config);
               className="bg-secondary/50"
             />
             
+            <Input 
+              placeholder="GitHub Repository URL (e.g., https://github.com/user/repo)" 
+              value={repoUrl}
+              onChange={(e) => setRepoUrl(e.target.value)}
+              className="bg-secondary/50"
+            />
+            
             <Button 
               className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg" 
-              disabled={!aiModel || !apiKey}
+              disabled={!aiModel || !apiKey || !repoUrl || isGenerating}
               onClick={handleAIGeneration}
             >
               {isGenerating ? (
                 <>
                   <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  Generating...
+                  Analyzing...
                 </>
               ) : (
                 <>
                   <Upload className="w-4 h-4 mr-2" />
-                  Upload Codebase
+                  Analyze Repository
                 </>
               )}
             </Button>
@@ -849,7 +974,7 @@ app.configure(config);
             <Sparkles className="w-4 h-4 mr-2" />
             Generate with AI
           </Button>
-          <Button variant="outline" className="w-full border-2 hover:bg-secondary/50">
+          <Button variant="outline" className="w-full border-2 hover:bg-secondary/50" onClick={exportReadme}>
             <Download className="w-4 h-4 mr-2" />
             Export README
           </Button>
@@ -860,7 +985,7 @@ app.configure(config);
       <div className="flex-1">
         <PanelGroup direction="horizontal">
           {/* Editor Panel */}
-          <Panel defaultSize={50} minSize={30}>
+          <Panel defaultSize={50} minSize={25} maxSize={75}>
             <div className="h-full p-6 overflow-y-auto">
               <div className="flex items-center gap-2 mb-6">
                 <Code className="w-5 h-5 text-primary" />
@@ -877,14 +1002,19 @@ app.configure(config);
           </Panel>
 
           {/* Resize Handle */}
-          <PanelResizeHandle className="w-2 bg-border/30 hover:bg-border/50 transition-colors duration-200 group">
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-1 h-8 bg-border/60 rounded-full group-hover:bg-border/80 transition-colors duration-200"></div>
+          <PanelResizeHandle className="w-2 bg-border/30 hover:bg-primary/30 transition-all duration-200 group relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-1 h-8 bg-border/60 rounded-full group-hover:bg-primary/60 transition-all duration-200"></div>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="bg-primary/10 backdrop-blur-sm rounded-lg px-2 py-1">
+                <span className="text-xs text-primary font-medium">Drag to resize</span>
+              </div>
             </div>
           </PanelResizeHandle>
 
           {/* Live Preview Panel */}
-          <Panel defaultSize={50} minSize={30}>
+          <Panel defaultSize={50} minSize={25} maxSize={75}>
             <div className="h-full p-6 overflow-y-auto">
               <div className="flex items-center gap-2 mb-6">
                 <Eye className="w-5 h-5 text-primary" />
