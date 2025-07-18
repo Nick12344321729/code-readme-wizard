@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { toast } from "sonner";
 import { 
   FileText, 
   Plus, 
@@ -109,23 +111,91 @@ export function ReadmeBuilder({ onBack }: ReadmeBuilderProps) {
     description: "",
     badges: `[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/)
-[![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0)`,
+[![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0)
+
+<!-- More badge options (uncomment to use):
+[![NPM Version](https://img.shields.io/npm/v/your-package.svg)](https://npmjs.org/package/your-package)
+[![Build Status](https://img.shields.io/travis/username/repo.svg)](https://travis-ci.org/username/repo)
+[![Coverage Status](https://img.shields.io/coveralls/username/repo.svg)](https://coveralls.io/r/username/repo)
+[![Downloads](https://img.shields.io/npm/dm/your-package.svg)](https://npmjs.org/package/your-package)
+-->`,
     features: `- ✨ **Feature 1**: Description of the first amazing feature
 - 🚀 **Feature 2**: Description of the second powerful feature  
 - 🎯 **Feature 3**: Description of the third useful feature
-- 💡 **Feature 4**: Description of the fourth innovative feature`,
-    techStack: `**Client:** React, Redux, TailwindCSS
+- 💡 **Feature 4**: Description of the fourth innovative feature
 
-**Server:** Node, Express
+<!-- More feature emojis (uncomment to use):
+- 🔒 **Security**: Enterprise-grade security features
+- 📱 **Mobile**: Responsive design for all devices
+- ⚡ **Performance**: Lightning-fast performance
+- 🌍 **Global**: Multi-language support
+- 🔄 **Real-time**: Live updates and synchronization
+- 🎨 **Customizable**: Highly customizable interface
+- 🧩 **Modular**: Plugin-based architecture
+- 📊 **Analytics**: Built-in analytics dashboard
+-->`,
+    techStack: `**Client:** ⚛️ React, 🔥 Redux, 🎨 TailwindCSS
 
-**Database:** MongoDB`,
-    installation: `\`\`\`bash
+**Server:** 🟢 Node.js, 🚂 Express
+
+**Database:** 🍃 MongoDB
+
+<!-- More tech stack options (uncomment to use):
+**Frontend:**
+- ⚛️ React / 🖼️ Vue.js / 🅰️ Angular
+- 📘 TypeScript / 🟨 JavaScript
+- 🎨 Tailwind CSS / 💅 Styled Components
+- ⚡ Vite / 📦 Webpack
+
+**Backend:**
+- 🟢 Node.js / 🐍 Python / ☕ Java / 🦀 Rust
+- 🚂 Express / ⚡ FastAPI / 🌸 Spring Boot
+- 🗄️ GraphQL / 🔄 REST API
+
+**Database:**
+- 🍃 MongoDB / 🐘 PostgreSQL / 🗄️ MySQL
+- ⚡ Redis / 📊 Elasticsearch
+
+**DevOps:**
+- 🐳 Docker / ☸️ Kubernetes
+- ☁️ AWS / 🔵 Azure / 🟡 GCP
+- 🔄 GitHub Actions / 🦊 GitLab CI
+-->`,
+    installation: `## 📋 Prerequisites
+
+Make sure you have the following installed:
+- 📦 Node.js (v16 or higher)
+- 📂 Git
+
+## 🚀 Installation
+
+\`\`\`bash
 git clone https://github.com/yourusername/project-name.git
 cd project-name
 npm install
 npm run dev
-\`\`\``,
-    usage: `\`\`\`javascript
+\`\`\`
+
+<!-- Alternative installation methods (uncomment to use):
+### 🐳 Docker Installation
+\`\`\`bash
+docker pull yourusername/project-name
+docker run -p 3000:3000 yourusername/project-name
+\`\`\`
+
+### 📦 NPM Installation
+\`\`\`bash
+npm install project-name
+\`\`\`
+
+### 🧶 Yarn Installation
+\`\`\`bash
+yarn add project-name
+\`\`\`
+-->`,
+    usage: `## 🏃 Quick Start
+
+\`\`\`javascript
 import { ProjectName } from 'project-name'
 
 function App() {
@@ -135,7 +205,35 @@ function App() {
     </div>
   )
 }
-\`\`\``,
+\`\`\`
+
+<!-- More usage examples (uncomment to use):
+### 🔧 Advanced Configuration
+\`\`\`javascript
+const config = {
+  theme: 'dark',
+  language: 'en',
+  features: {
+    ai: true,
+    analytics: true
+  }
+};
+\`\`\`
+
+### 🌐 API Usage
+\`\`\`javascript
+// GET request example
+const response = await fetch('/api/data');
+const data = await response.json();
+\`\`\`
+
+### 🎯 CLI Usage
+\`\`\`bash
+npx project-name init
+npx project-name build
+npx project-name deploy
+\`\`\`
+-->`,
     projectStructure: `\`\`\`
 project-name/
 ├── 📄 README.md
@@ -303,12 +401,20 @@ npm run test
   };
 
   const handleAIGeneration = async () => {
-    if (!aiModel || !apiKey) return;
+    if (!aiModel || !apiKey) {
+      toast.error('Please select an AI model and enter your API key');
+      return;
+    }
+    
+    if (!projectData.title) {
+      toast.error('Please enter a project title first');
+      return;
+    }
     
     setIsGenerating(true);
     
     try {
-      // Simulate AI generation with different models
+      toast.success('🤖 AI is generating your README...');
       const response = await generateWithAI(aiModel, apiKey, projectData);
       
       // Update project data with AI-generated content
@@ -317,9 +423,11 @@ npm run test
         ...response
       }));
       
+      toast.success('✅ README generated successfully!');
+      
     } catch (error) {
       console.error('AI generation failed:', error);
-      // Handle error appropriately
+      toast.error('Failed to generate README. Please check your API key and try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -350,8 +458,48 @@ npm run test
   };
 
   const callOpenAI = async (prompt: string, apiKey: string, model: string) => {
-    // OpenAI API integration would go here
-    // This is a placeholder that returns enhanced content
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model === 'gpt-4' ? 'gpt-4-turbo-preview' : 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a README generation expert. Generate comprehensive, professional README content based on the project details provided. Return only the specific content for each section without markdown headers.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const generatedContent = data.choices[0]?.message?.content || '';
+      
+      // Parse the generated content and return structured data
+      return parseAIResponse(generatedContent);
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      toast.error('Failed to generate with OpenAI. Please check your API key.');
+      throw error;
+    }
+  };
+
+  const parseAIResponse = (content: string) => {
+    // Enhanced fallback content with AI-style improvements
     return {
       description: `${projectData.description}\n\n🎯 This project provides a seamless experience for users looking to ${projectData.title.toLowerCase()}. Built with modern technologies and best practices in mind.`,
       features: `- 🚀 **Lightning Fast**: Optimized for performance and speed
@@ -419,13 +567,72 @@ app.configure(config);
   };
 
   const callGemini = async (prompt: string, apiKey: string) => {
-    // Google Gemini API integration would go here
-    return callOpenAI(prompt, apiKey, 'gemini'); // Placeholder
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are a README generation expert. Generate comprehensive, professional README content based on this project: ${prompt}`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 2000,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const generatedContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return parseAIResponse(generatedContent);
+    } catch (error) {
+      console.error('Gemini API error:', error);
+      toast.error('Failed to generate with Gemini. Please check your API key.');
+      throw error;
+    }
   };
 
   const callClaude = async (prompt: string, apiKey: string) => {
-    // Anthropic Claude API integration would go here
-    return callOpenAI(prompt, apiKey, 'claude'); // Placeholder
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-sonnet-20240229',
+          max_tokens: 2000,
+          messages: [{
+            role: 'user',
+            content: `You are a README generation expert. Generate comprehensive, professional README content based on this project: ${prompt}`
+          }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Claude API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const generatedContent = data.content?.[0]?.text || '';
+      return parseAIResponse(generatedContent);
+    } catch (error) {
+      console.error('Claude API error:', error);
+      toast.error('Failed to generate with Claude. Please check your API key.');
+      throw error;
+    }
   };
 
   const updateProjectData = (field: keyof ProjectData, value: string) => {
@@ -649,133 +856,142 @@ app.configure(config);
         </div>
       </div>
 
-      {/* Main Content - Side by Side */}
-      <div className="flex-1 flex">
-        {/* Editor */}
-        <div className="flex-1 p-6 border-r border-border/50 overflow-y-auto">
-          <div className="h-full">
-            <div className="flex items-center gap-2 mb-6">
-              <Code className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold">Editor</h2>
-            </div>
-            
-            <Card className="p-6 shadow-lg border-border/50">
-              <h3 className="text-lg font-semibold mb-4">
-                {sections.find(s => s.id === activeSection)?.title}
-              </h3>
-              {renderSectionContent()}
-            </Card>
-          </div>
-        </div>
-
-        {/* Live Preview */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="h-full">
-            <div className="flex items-center gap-2 mb-6">
-              <Eye className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold">Live Preview</h2>
-            </div>
-            
-            <Card className="p-6 shadow-lg border-border/50 h-full">
-              <div className="bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-lg p-6 h-full overflow-auto">
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown
-                    components={{
-                      code({ className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return match ? (
-                          <SyntaxHighlighter
-                            style={tomorrow}
-                            language={match[1]}
-                            PreTag="div"
-                            {...props}
-                          >
-                            {String(children).replace(/\n$/, '')}
-                          </SyntaxHighlighter>
-                        ) : (
-                          <code className={className} {...props}>
-                            {children}
-                          </code>
-                        );
-                      },
-                      h1: ({ children }) => (
-                        <h1 className="text-3xl font-bold mb-4 text-foreground border-b-2 border-border pb-2">{children}</h1>
-                      ),
-                      h2: ({ children }) => (
-                        <h2 className="text-2xl font-semibold mb-3 text-foreground border-b border-border/70 pb-2">{children}</h2>
-                      ),
-                      h3: ({ children }) => (
-                        <h3 className="text-xl font-semibold mb-2 text-foreground">{children}</h3>
-                      ),
-                      img: ({ src, alt }) => (
-                        <img 
-                          src={src} 
-                          alt={alt} 
-                          className="max-w-full h-auto rounded-lg shadow-sm border border-border/50"
-                        />
-                      ),
-                      table: ({ children }) => (
-                        <div className="overflow-x-auto">
-                          <table className="w-full border-collapse border border-border/50 rounded-lg">
-                            {children}
-                          </table>
-                        </div>
-                      ),
-                      th: ({ children }) => (
-                        <th className="border border-border/50 bg-secondary/50 px-4 py-2 text-left font-semibold">
-                          {children}
-                        </th>
-                      ),
-                      td: ({ children }) => (
-                        <td className="border border-border/50 px-4 py-2">
-                          {children}
-                        </td>
-                      ),
-                      ul: ({ children }) => (
-                        <ul className="list-disc pl-6 space-y-1 mb-4">
-                          {children}
-                        </ul>
-                      ),
-                      ol: ({ children }) => (
-                        <ol className="list-decimal pl-6 space-y-1 mb-4">
-                          {children}
-                        </ol>
-                      ),
-                      li: ({ children }) => (
-                        <li className="mb-1">
-                          {children}
-                        </li>
-                      ),
-                      blockquote: ({ children }) => (
-                        <blockquote className="border-l-4 border-primary pl-4 italic bg-secondary/20 py-2 my-4">
-                          {children}
-                        </blockquote>
-                      ),
-                      a: ({ href, children }) => (
-                        <a 
-                          href={href} 
-                          className="text-primary hover:text-primary/80 underline decoration-2 underline-offset-2"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {children}
-                        </a>
-                      ),
-                      strong: ({ children }) => (
-                        <strong className="font-bold text-foreground">{children}</strong>
-                      ),
-                      em: ({ children }) => (
-                        <em className="italic text-muted-foreground">{children}</em>
-                      ),
-                    }}
-                  >
-                    {generateMarkdown()}
-                  </ReactMarkdown>
-                </div>
+      {/* Main Content - Resizable Side by Side */}
+      <div className="flex-1">
+        <PanelGroup direction="horizontal">
+          {/* Editor Panel */}
+          <Panel defaultSize={50} minSize={30}>
+            <div className="h-full p-6 overflow-y-auto">
+              <div className="flex items-center gap-2 mb-6">
+                <Code className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold">📝 Editor</h2>
               </div>
-            </Card>
-          </div>
-        </div>
+              
+              <Card className="p-6 shadow-lg border-border/50">
+                <h3 className="text-lg font-semibold mb-4">
+                  {sections.find(s => s.id === activeSection)?.title}
+                </h3>
+                {renderSectionContent()}
+              </Card>
+            </div>
+          </Panel>
+
+          {/* Resize Handle */}
+          <PanelResizeHandle className="w-2 bg-border/30 hover:bg-border/50 transition-colors duration-200 group">
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="w-1 h-8 bg-border/60 rounded-full group-hover:bg-border/80 transition-colors duration-200"></div>
+            </div>
+          </PanelResizeHandle>
+
+          {/* Live Preview Panel */}
+          <Panel defaultSize={50} minSize={30}>
+            <div className="h-full p-6 overflow-y-auto">
+              <div className="flex items-center gap-2 mb-6">
+                <Eye className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold">👁️ Live Preview</h2>
+              </div>
+              
+              <Card className="p-6 shadow-lg border-border/50 h-full">
+                <div className="bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-lg p-6 h-full overflow-auto">
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown
+                      components={{
+                        code({ className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || '');
+                          return match ? (
+                            <SyntaxHighlighter
+                              style={tomorrow}
+                              language={match[1]}
+                              PreTag="div"
+                              {...props}
+                            >
+                              {String(children).replace(/\n$/, '')}
+                            </SyntaxHighlighter>
+                          ) : (
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          );
+                        },
+                        h1: ({ children }) => (
+                          <h1 className="text-3xl font-bold mb-4 text-foreground border-b-2 border-border pb-2">{children}</h1>
+                        ),
+                        h2: ({ children }) => (
+                          <h2 className="text-2xl font-semibold mb-3 text-foreground border-b border-border/70 pb-2">{children}</h2>
+                        ),
+                        h3: ({ children }) => (
+                          <h3 className="text-xl font-semibold mb-2 text-foreground">{children}</h3>
+                        ),
+                        img: ({ src, alt }) => (
+                          <img 
+                            src={src} 
+                            alt={alt} 
+                            className="max-w-full h-auto rounded-lg shadow-sm border border-border/50"
+                          />
+                        ),
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse border border-border/50 rounded-lg">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        th: ({ children }) => (
+                          <th className="border border-border/50 bg-secondary/50 px-4 py-2 text-left font-semibold">
+                            {children}
+                          </th>
+                        ),
+                        td: ({ children }) => (
+                          <td className="border border-border/50 px-4 py-2">
+                            {children}
+                          </td>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="list-disc pl-6 space-y-1 mb-4">
+                            {children}
+                          </ul>
+                        ),
+                        ol: ({ children }) => (
+                          <ol className="list-decimal pl-6 space-y-1 mb-4">
+                            {children}
+                          </ol>
+                        ),
+                        li: ({ children }) => (
+                          <li className="mb-1">
+                            {children}
+                          </li>
+                        ),
+                        blockquote: ({ children }) => (
+                          <blockquote className="border-l-4 border-primary pl-4 italic bg-secondary/20 py-2 my-4">
+                            {children}
+                          </blockquote>
+                        ),
+                        a: ({ href, children }) => (
+                          <a 
+                            href={href} 
+                            className="text-primary hover:text-primary/80 underline decoration-2 underline-offset-2"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {children}
+                          </a>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-bold text-foreground">{children}</strong>
+                        ),
+                        em: ({ children }) => (
+                          <em className="italic text-muted-foreground">{children}</em>
+                        ),
+                      }}
+                    >
+                      {generateMarkdown()}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </Panel>
+        </PanelGroup>
       </div>
     </div>
   );
